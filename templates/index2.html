@@ -1,0 +1,59 @@
+<!-- templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Predictivo de Ventas</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Análisis Predictivo de Ventas - Producto A</h1>
+        
+        <h2>Ventas Históricas</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Ventas</th>
+                    <th>Promedio Móvil</th>
+                    <th>Interpretación</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for index, row in df.iterrows() %}
+                <tr>
+                    <td>{{ row['Fecha'].strftime('%Y-%m-%d') }}</td>
+                    <td>{{ row['Ventas'] }}</td>
+                    <td>{{ row['Promedio Movil'] if row['Promedio Movil'] is not none and not row['Promedio Movil'] != row['Promedio Movil'] else '-' }}</td>
+                    <td>{{ row['Interpretación'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Predicciones de Ventas Futuras</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Predicción de Ventas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for index, row in df_predicciones.iterrows() %}
+                <tr>
+                    <td>{{ row['Fecha'].strftime('%Y-%m-%d') }}</td>
+                    <td>{{ row['Predicción de Ventas'] | round(2) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Gráfica de Ventas</h2>
+        <img src="{{ image_path }}" alt="Gráfica de Ventas" class="img-fluid">
+    </div>
+</body>
+</html>

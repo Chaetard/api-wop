@@ -1,24 +1,101 @@
-<!-- templates/index.html -->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análisis Predictivo de Ventas</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Agregar estilos para mejorar la claridad de las tablas */
+
+        body{
+            color: white;
+            background-color: black;
+        }
+        table {
+            font-size: 0.9rem;
+        }
+        th, td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .increase {
+            color: green;
+        }
+        .decrease {
+            color: red;
+        }
+        .no-change {
+            color: gray;
+        }
+        .enunciado {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .grafica {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
-        <h1>Análisis Predictivo de Ventas - Producto A</h1>
-        
+        <h1 class="mb-4">Análisis Predictivo de Ventas</h1>
+
+        <!-- Mostrar mensajes de error si existen -->
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <!-- Formulario para ingresar rango de fechas y producto -->
+        <form method="post" class="mb-4">
+            <div class="form-group">
+                <label for="producto">Seleccione el Producto:</label>
+                <select id="producto" name="producto" class="form-control" required>
+                    <option value="">-- Seleccione un Producto --</option>
+                    {% for producto in productos %}
+                    <option value="{{ producto }}">{{ producto }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="fecha_inicio">Fecha de Inicio:</label>
+                <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="fecha_fin">Fecha de Fin:</label>
+                <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Generar Análisis</button>
+        </form>
+
+        {% if df is defined and not df.empty %}
+        <!-- Mostrar el enunciado resumen -->
+        <p class="enunciado">{{ enunciado }}</p>
+
+        <!-- Mostrar la gráfica -->
+        <div class="grafica">
+            <img src="{{ url_for('static', filename='grafica_ventas.png') }}" alt="Gráfica de Ventas">
+        </div>
+
         <h2>Ventas Históricas</h2>
-        <table class="table table-bordered">
-            <thead>
+        <table class="table table-bordered table-sm">
+            <thead class="thead-light">
                 <tr>
                     <th>Fecha</th>
                     <th>Ventas</th>
                     <th>Promedio Móvil</th>
+                    <th>Variación</th>
+                    <th>% Variación</th>
                     <th>Interpretación</th>
                 </tr>
             </thead>
@@ -27,19 +104,44 @@
                 <tr>
                     <td>{{ row['Fecha'].strftime('%Y-%m-%d') }}</td>
                     <td>{{ row['Ventas'] }}</td>
-                    <td>{{ row['Promedio Movil'] if row['Promedio Movil'] is not none and not row['Promedio Movil'] != row['Promedio Movil'] else '-' }}</td>
-                    <td>{{ row['Interpretación'] }}</td>
+                    <td>
+                        {% if not row['Promedio Movil'] != row['Promedio Movil'] %}
+                            {{ row['Promedio Movil'] | round(2) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not row['Variación'] != row['Variación'] %}
+                            {{ row['Variación'] | round(2) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not row['% Variación'] != row['% Variación'] %}
+                            {{ row['% Variación'] | round(2) }}%
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="{% if row['Interpretación'] == 'Aumenta' %}increase{% elif row['Interpretación'] == 'Disminuye' %}decrease{% else %}no-change{% endif %}">
+                        {{ row['Interpretación'] }}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        <h2>Predicciones de Ventas Futuras</h2>
-        <table class="table table-bordered">
-            <thead>
+        <h2 class="mt-5">Predicciones de Ventas Futuras</h2>
+        <table class="table table-bordered table-sm">
+            <thead class="thead-light">
                 <tr>
                     <th>Fecha</th>
                     <th>Predicción de Ventas</th>
+                    <th>Variación</th>
+                    <th>% Variación</th>
+                    <th>Interpretación</th>
                 </tr>
             </thead>
             <tbody>
@@ -47,10 +149,28 @@
                 <tr>
                     <td>{{ row['Fecha'].strftime('%Y-%m-%d') }}</td>
                     <td>{{ row['Predicción de Ventas'] | round(2) }}</td>
+                    <td>
+                        {% if not row['Variación'] != row['Variación'] %}
+                            {{ row['Variación'] | round(2) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not row['% Variación'] != row['% Variación'] %}
+                            {{ row['% Variación'] | round(2) }}%
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="{% if row['Interpretación'] == 'Aumenta' %}increase{% elif row['Interpretación'] == 'Disminuye' %}decrease{% else %}no-change{% endif %}">
+                        {{ row['Interpretación'] }}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        {% endif %}
     </div>
 </body>
 </html>
